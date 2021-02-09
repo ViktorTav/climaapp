@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimaApp</title>
+
+    <!--Bootstrap-->
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+    
+    <!--JQuery-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!--CSS-->
+
+    <style>
+        
+        :root{
+
+            --bgColorCartao:deepskyblue;
+
+        }
+
+        body{
+
+            background-size: 100vw 100vh;
+            width: 100vw; height: 100vh;
+
+        }
+
+        div#msgErro{
+
+            position: absolute;
+            left: 50%;
+            bottom: 3%;
+            transform: translateX(-50%);
+            z-index: 998;
+            
+        }
+
+        div.cartao{
+
+            width: 250px;
+            height: 280px;
+            position: relative;
+            padding: 7px 15px;
+            background-color: var(--bgColorCartao);
+            margin: 10px;
+
+        }
+
+        p{
+
+            margin: 0;
+
+        }
+
+        p.tempMinMax{
+
+            font-size: 0.8rem;
+
+        }
+
+        p#descricao{
+
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: max-content;
+
+        }
+
+        .center{
+
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%,-50%);
+
+        }
+
+        .modal{
+
+            background-color: rgba(0, 0, 0, 0.459);
+
+        }
+
+        button#abrirJanela{
+
+            display: none;
+
+        }
+
+    </style>
+
+
+</head>
+<body class = "p-4">
+    
+    <div id = "msgErro"></div>
+    <div id = "janela"></div>
+
+    <form class = "d-flex justify-content-center">
+        
+        <div class="input-group">
+
+            <input placeholder = "Digite uma cidade..." class = "form-control" id = "cidade" required type="text"> 
+        
+            <div class = "input-group-append">
+    
+                <button class ="btn btn-primary">Pesquisar</button>
+    
+            </div>    
+
+        </div>
+
+    </form>
+
+    <div class="w-100 h-50 center p-4" id = cartoes>
+
+        <div class = "w-100 h-100 position-relative d-flex justify-content-center" id = "conteudo"></div>
+
+    </div>
+
+    <div id = "janela">
+        
+        <div class="modal fade" id="modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="titulo-janela"></h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id = "texto-janela"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-success" data-bs-dismiss="modal">Okay!</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button id = "abrirJanela" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal">
+          </button>
+
+    </div>
+
+    <script>
+
+        let cidadesPesquisadas = [];
+
+        function capitalize(texto){
+
+            return texto.charAt(0).toUpperCase() + texto.slice(1)
+
+        }
+
+        function limparInput(){
+
+            $("input#cidade").val("")
+            $("input#cidade").focus();
+
+        }
+
+        function criarCartao(info){
+
+            const clima = info.weather[0];
+            const principal = info.main;
+
+            const temperaturaAtual = parseInt(principal.temp);
+            const temperaturaMax = parseInt(principal.temp_max);
+            const temperaturaMin = parseInt(principal.temp_min);
+
+            const descricao = capitalize(clima.description);
+            const iconUrl = `https://openweathermap.org/img/wn/${clima.icon}@2x.png`;
+            const nomeCidadeClass = info.name.length >= 19 ? "fs-5" : "fs-4";
+
+            $(`<div class = "cartao text-white rounded my-2">
+            
+                <div id = "conteudo">
+
+                    <p class = "${nomeCidadeClass} text-center">${info.name}</p>
+
+                    <div class = "text-end" id = "temps">
+                        <p class = "fs-2">${temperaturaAtual}°C</p>
+                        <p class = "tempMinMax">Min:${temperaturaMin}°C</p>
+                        <p class = "tempMinMax">Max:${temperaturaMax}°C</p>
+                    </div>
+
+                    <img class = "center" id = "tempoIcon" src = ${iconUrl}>
+
+                    <p id = "descricao">${descricao}</p>
+
+                </div>
+
+            </div>`).appendTo("div#cartoes>div#conteudo").hide().fadeIn(300);
+
+            limparInput()
+
+        }
+
+        function tratarErro(codigoErro){
+
+            const mensagensDeErro = {
+
+                404: "Cidade não encontrada!",
+                inputVazio: "Você não digitou nenhuma cidade!",
+                cidadeJaPesquisada: "Essa cidade já foi pesquisada"
+
+            }
+
+            $("div#msgErro>div") ? $("div#msgErro>div").remove() : "";
+
+            $("div#msgErro").append($(`
+            
+            <div class="alert alert-danger alert-dismissible" role="alert">
+                ${mensagensDeErro[codigoErro]}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            `)).hide().fadeIn(300);
+
+        }
+
+        function verificarNomeCidade(nomeCidade){
+
+            if (nomeCidade == false){tratarErro("inputVazio"); return true} 
+
+            for (let i = 0; i < cidadesPesquisadas.length; i++){
+
+                if (nomeCidade == cidadesPesquisadas[i]){
+
+                    tratarErro("cidadeJaPesquisada");
+                    limparInput();
+                    return true;
+
+                }
+
+            }
+
+            return false;
+
+        }
+
+        const apiKey = "d7f4c82d800ee3b805b4eda5749983d9";
+
+        function obterClimaPorNomeCidade(nomeCidade){
+
+            if (verificarNomeCidade(nomeCidade) == true) return;
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${nomeCidade}&appid=${apiKey}&lang=pt_br&units=metric`
+            const options = {method: "GET"}
+
+            fetch(url,options)
+            .then(res => res.json())
+            .then(resJson => {
+                
+                if (resJson.message){
+
+                    return tratarErro(resJson.cod);
+
+                }
+
+                criarCartao(resJson);
+                cidadesPesquisadas.push(resJson.name)
+            
+            })
+            .catch(err => console.log(err))
+
+        }
+
+        function abrirJanela(titulo,texto){
+
+            $("div#janela>div")[0].classList.contains("show") ? $("button#fecharJanela")[0].click(): ""
+
+            $("#titulo-janela").text(titulo);
+            $("#texto-janela").text(texto);
+
+            $("button#abrirJanela")[0].click();
+
+        }
+
+        function obterClimaPorCoordenadas(position){
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric&lang=pt_br`
+            const options = {method: "GET"};
+
+            fetch(apiUrl, options)
+            .then(res => res.json())
+            .then(resJson => {
+                
+                if (resJson.message){
+
+                    return tratarErro(resJson.cod);
+
+                }
+
+                criarCartao(resJson);
+                cidadesPesquisadas.push(resJson.name)
+            
+            })
+            .catch(err => console.log(err))
+
+        }
+
+        function verificarGeoLocation(callback){
+
+            if (navigator.geolocation){
+
+                navigator.permissions.query({name:'geolocation'})
+                .then((permissionStatus)=>{
+                    verificarPermissao(permissionStatus)
+                    permissionStatus.onchange = ()=> location.reload(true);
+                })
+            
+            } else{
+
+                console.log("Navegador não suporta GeoLocalização!")
+
+            }
+
+            function verificarPermissao(permissionStatus){
+
+                if (permissionStatus.state == "denied" || permissionStatus.state == "prompt"){
+                    abrirJanela(
+                    "Permitir localização",
+                    "Permita acessarmos sua localização para que possamos exibir a temperatura em sua localização atual."
+                    )
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position){
+
+                        callback(position);
+
+                    },
+                    function(error){
+
+                        console.log(error);
+
+                    }
+                )
+            }
+        }
+
+        $("form").submit(function(event){
+
+            event.preventDefault();
+
+            obterClimaPorNomeCidade($("input#cidade").val())
+
+        })
+
+        const hora = new Date().getHours();
+
+        let bgUrl = "./img/dia.jpg";
+
+        if (hora >= 18 || hora <= 6){
+
+            bgUrl = "./img/noite.jpg";
+            $("html").css("--bgColorCartao", "#212529");
+
+        } 
+
+        $("body").css("background-image", `url(${bgUrl})`);
+
+        verificarGeoLocation(obterClimaPorCoordenadas);
+
+    </script>
+
+</body>
+</html>
