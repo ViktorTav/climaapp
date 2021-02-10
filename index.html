@@ -338,7 +338,7 @@
 
         function obterCoordenadasPorNomeCidade(nomeCidade, callback){
 
-            const url = `http://api.openweathermap.org/geo/1.0/direct?q=${nomeCidade}&limit=1&appid=${apiKey}`
+            const url = `https://api.openweathermap.org/geo/1.0/direct?q=${nomeCidade}&limit=1&appid=${apiKey}`
             const options = {method: "GET"};
 
             fetch(url,options)
@@ -360,7 +360,7 @@
 
         function obterNomeCidadePorCoordenadas(coords){
 
-            const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${coords.lat}&lon=${coords.lon}&limit=1&appid=${apiKey}`
+            const url = `https://api.openweathermap.org/geo/1.0/reverse?lat=${coords.lat}&lon=${coords.lon}&limit=1&appid=${apiKey}`
             const options = {method: "GET"};
 
             let nomeCidade;
@@ -457,7 +457,7 @@
             obterCoordenadasPorGeoLocation(obterClima);
 
         }
-        
+
     </script>
 
 </body>
