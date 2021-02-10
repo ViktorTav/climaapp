@@ -94,8 +94,18 @@
 
         }
 
-    </style>
+        @media screen and (orientation: portrait){
 
+            body{
+
+                background-size: cover;
+                background-position: center;
+
+            }
+
+        }
+
+    </style>
 
 </head>
 <body class = "p-4">
@@ -151,7 +161,21 @@
 
     <script>
 
-        let cidadesPesquisadas = [];
+        function verificarOrientacao(e, callback){
+
+            if (e.matches){
+
+                orientacao = "portrait";
+
+                callback();
+
+            } else{
+
+                orientacao = "landscape"
+
+            }
+
+        }
 
         function capitalize(texto){
 
@@ -166,34 +190,32 @@
 
         }
 
-        function criarCartao(info){
+        function criarCartao(clima){
 
-            const clima = info.weather[0];
-            const principal = info.main;
+            const nomeCidadeClass = clima.nomeCidade.length >= 19 ? "fs-5" : "fs-4";
 
-            const temperaturaAtual = parseInt(principal.temp);
-            const temperaturaMax = parseInt(principal.temp_max);
-            const temperaturaMin = parseInt(principal.temp_min);
+            if (orientacao == "portrait"){
 
-            const descricao = capitalize(clima.description);
-            const iconUrl = `https://openweathermap.org/img/wn/${clima.icon}@2x.png`;
-            const nomeCidadeClass = info.name.length >= 19 ? "fs-5" : "fs-4";
+                $("div#cartoes>div#conteudo>div.cartao").remove();
+                cidadesPesquisadas.shift();
+
+            }
 
             $(`<div class = "cartao text-white rounded my-2">
             
                 <div id = "conteudo">
 
-                    <p class = "${nomeCidadeClass} text-center">${info.name}</p>
+                    <p class = "${nomeCidadeClass} text-center">${clima.nomeCidade}</p>
 
                     <div class = "text-end" id = "temps">
-                        <p class = "fs-2">${temperaturaAtual}°C</p>
-                        <p class = "tempMinMax">Min:${temperaturaMin}°C</p>
-                        <p class = "tempMinMax">Max:${temperaturaMax}°C</p>
+                        <p class = "fs-2">${clima.temp}°C</p>
+                        <p class = "tempMinMax">Min:${clima.temp_min}°C</p>
+                        <p class = "tempMinMax">Max:${clima.temp_max}°C</p>
                     </div>
 
-                    <img class = "center" id = "tempoIcon" src = ${iconUrl}>
+                    <img class = "center" id = "tempoIcon" src = ${clima.iconUrl}>
 
-                    <p id = "descricao">${descricao}</p>
+                    <p id = "descricao">${clima.descricao}</p>
 
                 </div>
 
@@ -203,26 +225,22 @@
 
         }
 
-        function tratarErro(codigoErro){
+        function excluirCartoes(){
 
-            const mensagensDeErro = {
+            let cartoes = $("div#cartoes>div#conteudo>div.cartao");
 
-                404: "Cidade não encontrada!",
-                inputVazio: "Você não digitou nenhuma cidade!",
-                cidadeJaPesquisada: "Essa cidade já foi pesquisada"
+            for (let i = 0; i < cartoes.length; i++){
+
+                if (i >= cartoes.length-1){
+
+                    break;
+
+                }
+
+                cartoes[i].remove();
+                cidadesPesquisadas.shift();
 
             }
-
-            $("div#msgErro>div") ? $("div#msgErro>div").remove() : "";
-
-            $("div#msgErro").append($(`
-            
-            <div class="alert alert-danger alert-dismissible" role="alert">
-                ${mensagensDeErro[codigoErro]}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-
-            `)).hide().fadeIn(300);
 
         }
 
@@ -246,71 +264,32 @@
 
         }
 
+        function tratarErro(codigoErro){
+
+            const mensagensDeErro = {
+
+                404: "Cidade não encontrada!",
+                inputVazio: "Você não digitou nenhuma cidade!",
+                cidadeJaPesquisada: "Essa cidade já foi pesquisada"
+
+            }
+
+            $("div#msgErro>div") ? $("div#msgErro>div").remove() : "";
+
+            $("div#msgErro").append($(`
+            
+            <div class="text-center alert alert-danger alert-dismissible" role="alert">
+                ${mensagensDeErro[codigoErro]}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            `)).hide().fadeIn(300);
+
+        }
+
         const apiKey = "d7f4c82d800ee3b805b4eda5749983d9";
 
-        function obterClimaPorNomeCidade(nomeCidade){
-
-            if (verificarNomeCidade(nomeCidade) == true) return;
-
-            const url = `https://api.openweathermap.org/data/2.5/weather?q=${nomeCidade}&appid=${apiKey}&lang=pt_br&units=metric`
-            const options = {method: "GET"}
-
-            fetch(url,options)
-            .then(res => res.json())
-            .then(resJson => {
-                
-                if (resJson.message){
-
-                    return tratarErro(resJson.cod);
-
-                }
-
-                criarCartao(resJson);
-                cidadesPesquisadas.push(resJson.name)
-            
-            })
-            .catch(err => console.log(err))
-
-        }
-
-        function abrirJanela(titulo,texto){
-
-            $("div#janela>div")[0].classList.contains("show") ? $("button#fecharJanela")[0].click(): ""
-
-            $("#titulo-janela").text(titulo);
-            $("#texto-janela").text(texto);
-
-            $("button#abrirJanela")[0].click();
-
-        }
-
-        function obterClimaPorCoordenadas(position){
-
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
-            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric&lang=pt_br`
-            const options = {method: "GET"};
-
-            fetch(apiUrl, options)
-            .then(res => res.json())
-            .then(resJson => {
-                
-                if (resJson.message){
-
-                    return tratarErro(resJson.cod);
-
-                }
-
-                criarCartao(resJson);
-                cidadesPesquisadas.push(resJson.name)
-            
-            })
-            .catch(err => console.log(err))
-
-        }
-
-        function verificarGeoLocation(callback){
+        function obterCoordenadasPorGeoLocation(callback){
 
             if (navigator.geolocation){
 
@@ -328,7 +307,7 @@
 
             function verificarPermissao(permissionStatus){
 
-                if (permissionStatus.state == "denied" || permissionStatus.state == "prompt"){
+                if (permissionStatus.state == "prompt"){
                     abrirJanela(
                     "Permitir localização",
                     "Permita acessarmos sua localização para que possamos exibir a temperatura em sua localização atual."
@@ -338,7 +317,14 @@
                 navigator.geolocation.getCurrentPosition(
                     function(position){
 
-                        callback(position);
+                        const coords = {
+
+                            lat: position.coords.latitude,
+                            lon: position.coords.longitude,
+
+                        }
+
+                        obterNomeCidadePorCoordenadas(coords).then(nomeCidade=>{callback(coords, nomeCidade)});
 
                     },
                     function(error){
@@ -350,29 +336,128 @@
             }
         }
 
+        function obterCoordenadasPorNomeCidade(nomeCidade, callback){
+
+            const url = `http://api.openweathermap.org/geo/1.0/direct?q=${nomeCidade}&limit=1&appid=${apiKey}`
+            const options = {method: "GET"};
+
+            fetch(url,options)
+            .then(res => res.json())
+            .then(res =>{
+
+                let coords = {
+
+                    lat: res[0].lat,
+                    lon: res[0].lon
+
+                }
+
+                callback(coords, nomeCidade);
+
+            });
+
+        }
+
+        function obterNomeCidadePorCoordenadas(coords){
+
+            const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${coords.lat}&lon=${coords.lon}&limit=1&appid=${apiKey}`
+            const options = {method: "GET"};
+
+            let nomeCidade;
+
+            return fetch(url,options)
+            .then(res => res.json())
+            .then(res => res[0].local_names.pt);
+
+        }
+
+        function obterClima(coords, nomeCidade){
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${coords.lat}&lon=${coords.lon}&appid=${apiKey}&units=metric&lang=pt_br`
+            const options = {method: "GET"};
+
+            fetch(apiUrl, options)
+            .then(res => res.json())
+            .then(res => {
+                
+                if (res.message){
+
+                    return tratarErro(res.cod);
+
+                }
+
+                const clima = {
+
+                    nomeCidade: nomeCidade,
+                    temp: parseInt(res.hourly[0].temp),
+                    temp_min: parseInt(res.daily[0].temp.min),
+                    temp_max: parseInt(res.daily[0].temp.max),
+                    descricao: capitalize(res.hourly[0].weather[0].description),
+                    iconUrl: `https://openweathermap.org/img/wn/${res.hourly[0].weather[0].icon}@2x.png`,
+
+                }
+
+                criarCartao(clima);
+                cidadesPesquisadas.push(nomeCidade)
+            
+            })
+            .catch(err => console.log(err))
+
+        }
+
+        function abrirJanela(titulo,texto){
+
+            $("div#janela>div")[0].classList.contains("show") ? $("button#fecharJanela")[0].click(): ""
+
+            $("#titulo-janela").text(titulo);
+            $("#texto-janela").text(texto);
+
+            $("button#abrirJanela")[0].click();
+
+        }
+
+        function configurarBackground(){
+
+            const hora = new Date().getHours();
+
+            let bgUrl = "./img/dia.jpg";
+
+            if (hora >= 18 || hora <= 6){
+
+                bgUrl = "./img/noite.jpg";
+                $("html").css("--bgColorCartao", "#212529");
+
+            } 
+
+            $("body").css("background-image", `url(${bgUrl})`);
+
+        }
+
+        let cidadesPesquisadas = [];
+        let orientacao;
+
+        const orientacaoMediaQuery = window.matchMedia("(orientation:portrait)");
+        orientacaoMediaQuery.addEventListener("change", (e)=>verificarOrientacao(e,excluirCartoes));
+        verificarOrientacao(orientacaoMediaQuery,excluirCartoes)
+        configurarBackground();
+
         $("form").submit(function(event){
 
             event.preventDefault();
 
-            obterClimaPorNomeCidade($("input#cidade").val())
+            let nomeCidade = $("input#cidade").val();
+
+            if (verificarNomeCidade(nomeCidade) == true) return;
+            obterCoordenadasPorNomeCidade(nomeCidade, obterClima);
 
         })
 
-        const hora = new Date().getHours();
+        window.onload = ()=>{
 
-        let bgUrl = "./img/dia.jpg";
+            obterCoordenadasPorGeoLocation(obterClima);
 
-        if (hora >= 18 || hora <= 6){
-
-            bgUrl = "./img/noite.jpg";
-            $("html").css("--bgColorCartao", "#212529");
-
-        } 
-
-        $("body").css("background-image", `url(${bgUrl})`);
-
-        verificarGeoLocation(obterClimaPorCoordenadas);
-
+        }
+        
     </script>
 
 </body>
