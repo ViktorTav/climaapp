@@ -20,6 +20,49 @@ function capitalize(texto){
 
 }
 
+function verificarNomeCidade(nomeCidade){
+
+    if (nomeCidade == false){tratarErro("inputVazio"); return true} 
+
+    for (let i = 0; i < cidadesPesquisadas.length; i++){
+
+        if (nomeCidade == cidadesPesquisadas[i]){
+
+            tratarErro("cidadeJaPesquisada");
+            limparInput();
+            return true;
+
+        }
+
+    }
+
+    return false;
+
+}
+
+function tratarErro(codigoErro){
+
+    const mensagensDeErro = {
+
+        404: "Cidade não encontrada!",
+        inputVazio: "Você não digitou nenhuma cidade!",
+        cidadeJaPesquisada: "Essa cidade já foi pesquisada"
+
+    }
+
+    $("div#msgErro>div") ? $("div#msgErro>div").remove() : "";
+
+    $("div#msgErro").append($(`
+    
+    <div class="text-center alert alert-danger alert-dismissible" role="alert">
+        ${mensagensDeErro[codigoErro]}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    `)).hide().fadeIn(300);
+
+}
+
 function limparInput(){
 
     $("input#cidade").val("")
@@ -77,49 +120,6 @@ function excluirCartoes(){
         cidadesPesquisadas.shift();
 
     }
-
-}
-
-function verificarNomeCidade(nomeCidade){
-
-    if (nomeCidade == false){tratarErro("inputVazio"); return true} 
-
-    for (let i = 0; i < cidadesPesquisadas.length; i++){
-
-        if (nomeCidade == cidadesPesquisadas[i]){
-
-            tratarErro("cidadeJaPesquisada");
-            limparInput();
-            return true;
-
-        }
-
-    }
-
-    return false;
-
-}
-
-function tratarErro(codigoErro){
-
-    const mensagensDeErro = {
-
-        404: "Cidade não encontrada!",
-        inputVazio: "Você não digitou nenhuma cidade!",
-        cidadeJaPesquisada: "Essa cidade já foi pesquisada"
-
-    }
-
-    $("div#msgErro>div") ? $("div#msgErro>div").remove() : "";
-
-    $("div#msgErro").append($(`
-    
-    <div class="text-center alert alert-danger alert-dismissible" role="alert">
-        ${mensagensDeErro[codigoErro]}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-
-    `)).hide().fadeIn(300);
 
 }
 
@@ -181,6 +181,12 @@ function obterCoordenadasPorNomeCidade(nomeCidade, callback){
     .then(res => res.json())
     .then(res =>{
 
+        if (res.message){
+
+            return tratarErro(res.cod);
+
+        }
+
         let coords = {
 
             lat: res[0].lat,
@@ -190,7 +196,8 @@ function obterCoordenadasPorNomeCidade(nomeCidade, callback){
 
         callback(coords, nomeCidade);
 
-    });
+    })
+    .catch(error => console.log(error))
 
 }
 
@@ -199,11 +206,20 @@ function obterNomeCidadePorCoordenadas(coords){
     const url = `https://api.openweathermap.org/geo/1.0/reverse?lat=${coords.lat}&lon=${coords.lon}&limit=1&appid=${apiKey}`
     const options = {method: "GET"};
 
-    let nomeCidade;
-
     return fetch(url,options)
     .then(res => res.json())
-    .then(res => res[0].local_names.pt);
+    .then(res => {
+    
+        if (res.message){
+
+            return tratarErro(res.cod);
+
+        }
+        
+        return res[0].local_names.pt || res[0].name
+    
+    })
+    .catch(error => console.log(error))
 
 }
 
@@ -237,7 +253,7 @@ function obterClima(coords, nomeCidade){
         cidadesPesquisadas.push(nomeCidade)
     
     })
-    .catch(err => console.log(err))
+    .catch(error => console.log(error))
 
 }
 
